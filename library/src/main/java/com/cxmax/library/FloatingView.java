@@ -1,14 +1,20 @@
 package com.cxmax.library;
 
+import android.animation.AnimatorInflater;
+import android.animation.StateListAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.support.annotation.ColorRes;
 import android.support.annotation.DimenRes;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -33,6 +39,14 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     private Bitmap mBitmap;
     private Matrix mMatrix;
     private OnFloatClickListener mOnFloatClickListener;
+
+    //添加android5.0material design 水波纹效果
+    private int mColorNormal;
+    private int mColorPressed;
+    private int mColorRipple;
+    private int mColorDisabled;
+    private boolean mShadow;
+    private int mShadowSize;
 
     public interface OnFloatClickListener{
         void floatClick(View view);
@@ -124,7 +138,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         Log.e(TAQ,"==========onDetachedFromWindow============");
     }
 
-    private void init(Context context, AttributeSet attrs) {
+    private void init(Context context, AttributeSet attributeSet) {
         mContext = context;
         mPaint = new Paint();
         if (mBitmap == null){
@@ -133,9 +147,69 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         mBitmapWidth = mBitmap.getWidth();
         mBitmapHeight = mBitmap.getHeight();
         mMatrix = new Matrix();
-        setOnFloatClickListener(mOnFloatClickListener);
+        //初始化自定义属性
+        if (attributeSet != null) {
+            initAttributes(context, attributeSet);
+        }
+
+        //水波纹和阴影的效果
+        mColorNormal = getColor(R.color.material_blue_500);
+        mColorPressed = darkenColor(mColorNormal);
+        mColorRipple = lightenColor(mColorNormal);
+        mColorDisabled = getColor(android.R.color.darker_gray);
+        mShadow = true;
+        if (hasLollipopApi()) {
+            StateListAnimator stateListAnimator = AnimatorInflater.loadStateListAnimator(context,
+                    R.anim.press_elevation);
+            setStateListAnimator(stateListAnimator);
+        }
     }
 
+    private void initAttributes(Context context, AttributeSet attributeSet) {
+        TypedArray attr = getTypedArray(context,attributeSet,R.styleable.FloatingView);
+        if (attr != null){
+            mColorNormal = attr.getColor(R.styleable.FloatingView_cx_colorNormal,getColor(R.color.material_blue_500));
+            mColorPressed = attr.getColor(R.styleable.FloatingView_cx_colorPressed,darkenColor(mColorNormal));
+            mColorRipple = attr.getColor(R.styleable.FloatingView_cx_colorNormal,lightenColor(mColorNormal));
+            mColorDisabled = attr.getColor(R.styleable.FloatingView_cx_colorDisabled,mColorDisabled);
+            mShadow = attr.getBoolean(R.styleable.FloatingView_cx_shadow,true);
+        }
+    }
+
+    private TypedArray getTypedArray(Context context, AttributeSet attributeSet, int[] attr) {
+        return context.obtainStyledAttributes(attributeSet, attr, 0, 0);
+    }
+    private int getColor(@ColorRes int id) {
+        return getResources().getColor(id);
+    }
+
+    private int getDimension(@DimenRes int id) {
+        return getResources().getDimensionPixelSize(id);
+    }
+
+    private static int darkenColor(int color){
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        hsv[2] *= 0.9f;
+        return Color.HSVToColor(hsv);
+    }
+    private static int lightenColor(int color) {
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        hsv[2] *= 1.1f;
+        return Color.HSVToColor(hsv);
+    }
+    private boolean hasLollipopApi() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    }
+
+    private boolean hasJellyBeanApi() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
+    }
+
+    private boolean hasHoneycombApi() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+    }
     private void setMargins(){
         if (!mMarginSet){
             if (getLayoutParams() instanceof ViewGroup.LayoutParams){

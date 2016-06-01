@@ -6,6 +6,7 @@
     tools:context="com.cxmax.floatingview.MainActivity">
 
     <com.cxmax.library.FloatingView
+        android:id="@+id/float_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@mipmap/ic_launcher"
