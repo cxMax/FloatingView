@@ -4,21 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.cxmax.floatingview.MainActivity">
+    tools:context=".activity.MainActivity">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.cxmax.library.FloatingView
+    <com.cxmax.library.widget.FloatingView
         android:id="@+id/float_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:layout_margin="16dp"
-        android:src="@mipmap/ic_launcher"
-        max:cx_colorNormal="@color/accent"
-        max:cx_colorPressed="@color/accent_pressed"
-        max:cx_colorRipple="@color/ripple" />
+        android:src="@mipmap/float_ad_default"
+        max:cx_animation="false" />
 </FrameLayout>

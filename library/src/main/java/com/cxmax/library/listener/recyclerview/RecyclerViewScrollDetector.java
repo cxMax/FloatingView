@@ -1,4 +1,4 @@
-package com.cxmax.library;
+package com.cxmax.library.listener.recyclerview;
 
 import android.support.v7.widget.RecyclerView;
 
@@ -9,9 +9,9 @@ import android.support.v7.widget.RecyclerView;
 public abstract class RecyclerViewScrollDetector extends RecyclerView.OnScrollListener{
     private int mScrollThreshold;
 
-    abstract void onScrollUp();
+    public abstract void onScrollUp();
 
-    abstract void onScrollDown();
+    public abstract void onScrollDown();
 
     @Override
     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {

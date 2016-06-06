@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="FloatingView">
-        <attr name="cx_colorPressed" format="color" />
-        <attr name="cx_colorNormal" format="color" />
-        <attr name="cx_colorRipple" format="color" />
-        <attr name="cx_colorDisabled" format="color" />
-        <attr name="cx_shadow" format="boolean" />
-
-        </declare-styleable>
-
+        <attr name="cx_animation" format="boolean" />
+    </declare-styleable>
 </resources>

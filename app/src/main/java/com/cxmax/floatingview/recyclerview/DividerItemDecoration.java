@@ -1,4 +1,4 @@
-package com.cxmax.floatingview;
+package com.cxmax.floatingview.recyclerview;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -10,7 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 /**
- * Created by Administrator on 2016/6/4.
+ * Created by cxMax on 2016/6/4.
  */
 public class DividerItemDecoration extends RecyclerView.ItemDecoration{
     private static final int[] ATTRS = new int[]{

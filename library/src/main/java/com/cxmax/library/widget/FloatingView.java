@@ -1,50 +1,45 @@
-package com.cxmax.library;
+package com.cxmax.library.widget;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Outline;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
-import android.graphics.drawable.RippleDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.StateListDrawable;
-import android.graphics.drawable.shapes.OvalShape;
 import android.os.Build;
-import android.support.annotation.ColorRes;
 import android.support.annotation.DimenRes;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewOutlineProvider;
 import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.ImageView;
 
+import com.cxmax.library.R;
+import com.cxmax.library.listener.recyclerview.RecyclerViewScrollDetectorImpl;
+import com.cxmax.library.listener.recyclerview.ScrollDirectionListener;
 import com.nineoldandroids.view.ViewHelper;
 
 /**
  * Created by cxmax on 2016/5/31.
  */
-public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobalLayoutListener{
+public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobalLayoutListener,ScrollDirectionListener.ScrollViewListener {
     private final static String TAQ = FloatingView.class.getSimpleName();
-    private final static int MAX_WIDTH = 60;
-    private final static int MAX_HEIGHT = 60;
+    private final static int MAX_WIDTH = 90;
+    private final static int MAX_HEIGHT = 90;
     private static final int TRANSLATE_DURATION_MILLIS = 200;//进入和移出的动画时间
 
     private boolean mVisible;//当前view是否在屏幕内可见
-    private final Interpolator mInterpolator = new AccelerateDecelerateInterpolator();
+    private final Interpolator mInterpolator = new AccelerateDecelerateInterpolator(); //动画插值器
     private int mScrollThreshold;
+    private boolean mNeedAnimation; //滑动监听动画
 
     private Context mContext;
     private boolean mMarginSet;
@@ -53,14 +48,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     private Bitmap mBitmap;
     private Matrix mMatrix;
     private OnFloatClickListener mOnFloatClickListener;
-
-    //添加android5.0material design 水波纹效果
-    private int mColorNormal;
-    private int mColorPressed;
-    private int mColorRipple;
-    private int mColorDisabled;
-    private boolean mShadow;
-    private int mShadowSize;
+    private LayerDrawable mLayerDrawable;
 
     public interface OnFloatClickListener{
         void floatClick(View view);
@@ -110,7 +98,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mMatrix.postTranslate(0, 0);
+        mMatrix.setTranslate(mWidth - mBitmapHeight, dip2px(mContext,4));
         canvas.drawBitmap(mBitmap, mMatrix, mPaint);
     }
 
@@ -125,6 +113,12 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
             }
         }
     }
+
+    /**
+     * 点击事件绑定
+     * @param event
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()){
@@ -133,7 +127,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
                 break;
             case MotionEvent.ACTION_DOWN:
                 if (mBitmap != null){
-                    boolean touchable = (event.getX() < mBitmapWidth && event.getY() < mBitmapHeight);
+                    boolean touchable = (event.getX() > (mWidth - mBitmapWidth) && event.getY() < mBitmapHeight);
                     if (touchable){
                         setVisibility(GONE);
                     }else {
@@ -152,13 +146,14 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         super.onDetachedFromWindow();
     }
 
+    @SuppressWarnings("ResourceType")
     private void init(Context context, AttributeSet attributeSet) {
         mVisible = true;
         mContext = context;
         mScrollThreshold = dip2px(mContext,4);
         mPaint = new Paint();
         if (mBitmap == null){
-            mBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.search_clear_normal);
+            mBitmap = createLayerDrawable();
         }
         mBitmapWidth = mBitmap.getWidth();
         mBitmapHeight = mBitmap.getHeight();
@@ -167,75 +162,39 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         if (attributeSet != null) {
             initAttributes(context, attributeSet);
         }
-
-//        //水波纹和阴影的效果
-//        mColorNormal = getColor(R.color.material_blue_500);
-//        mColorPressed = darkenColor(mColorNormal);
-//        mColorRipple = lightenColor(mColorNormal);
-//        mColorDisabled = getColor(android.R.color.darker_gray);
-//        mShadow = true;
-//        if (hasLollipopApi()) {
-//            StateListAnimator stateListAnimator = AnimatorInflater.loadStateListAnimator(context,
-//                    R.anim.press_elevation);
-//            setStateListAnimator(stateListAnimator);
-//        }
-//
-//        updateBackground();
-    }
-
-    private void updateBackground() {
-        StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(new int[]{android.R.attr.state_pressed},createDrawable(mColorPressed));
-        drawable.addState(new int[]{-android.R.attr.state_enabled},createDrawable(mColorDisabled));
-        drawable.addState(new int[]{}, createDrawable(mColorNormal));
-        setBackgroundCompat(drawable);
     }
 
     private void initAttributes(Context context, AttributeSet attributeSet) {
-        TypedArray attr = getTypedArray(context,attributeSet,R.styleable.FloatingView);
+        TypedArray attr = getTypedArray(context,attributeSet, R.styleable.FloatingView);
         if (attr != null){
-            mColorNormal = attr.getColor(R.styleable.FloatingView_cx_colorNormal,getColor(R.color.material_blue_500));
-            mColorPressed = attr.getColor(R.styleable.FloatingView_cx_colorPressed,darkenColor(mColorNormal));
-            mColorRipple = attr.getColor(R.styleable.FloatingView_cx_colorNormal,lightenColor(mColorNormal));
-            mColorDisabled = attr.getColor(R.styleable.FloatingView_cx_colorDisabled,mColorDisabled);
-            mShadow = attr.getBoolean(R.styleable.FloatingView_cx_shadow,true);
+            mNeedAnimation = attr.getBoolean(R.styleable.FloatingView_cx_animation,true);
         }
     }
 
     private TypedArray getTypedArray(Context context, AttributeSet attributeSet, int[] attr) {
         return context.obtainStyledAttributes(attributeSet, attr, 0, 0);
     }
-    private int getColor(@ColorRes int id) {
-        return getResources().getColor(id);
-    }
 
-    private int getDimension(@DimenRes int id) {
-        return getResources().getDimensionPixelSize(id);
-    }
-
-    private static int darkenColor(int color){
-        float[] hsv = new float[3];
-        Color.colorToHSV(color, hsv);
-        hsv[2] *= 0.9f;
-        return Color.HSVToColor(hsv);
-    }
-    private static int lightenColor(int color) {
-        float[] hsv = new float[3];
-        Color.colorToHSV(color, hsv);
-        hsv[2] *= 1.1f;
-        return Color.HSVToColor(hsv);
-    }
-    private boolean hasLollipopApi() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
-    }
-
-    private boolean hasJellyBeanApi() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
+    @SuppressWarnings("ResourceType")
+    private Bitmap createLayerDrawable() {
+        if (mLayerDrawable == null ){
+            Drawable[] layers = new Drawable[2];
+            layers[0] = getDrawable(R.drawable.float_ad_close_background);
+            layers[1] = getDrawable(R.drawable.float_ad_close);
+            mLayerDrawable = new LayerDrawable(layers);
+        }
+        return drawableToBitmap(mLayerDrawable);
     }
 
     private boolean hasHoneycombApi() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
     }
+
+    @SuppressWarnings("ResourceType")
+    private Drawable getDrawable(@DimenRes int id){
+        return getResources().getDrawable(id);
+    }
+
     private void setMargins(){
         if (!mMarginSet){
             if (getLayoutParams() instanceof ViewGroup.LayoutParams){
@@ -252,48 +211,6 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         }
     }
 
-    private Drawable createDrawable(int color) {
-        OvalShape ovalShape = new OvalShape();
-        ShapeDrawable shapeDrawable = new ShapeDrawable(ovalShape);
-        shapeDrawable.getPaint().setColor(color);
-
-        if (mShadow && !hasLollipopApi()){ //5.0以下版本
-            Drawable shadowDrawable = getResources().getDrawable(R.drawable.fab_shadow);
-            LayerDrawable layerDrawable = new LayerDrawable(new Drawable[]{shadowDrawable,shapeDrawable});
-            layerDrawable.setLayerInset(1, mShadowSize, mShadowSize, mShadowSize, mShadowSize);
-            return layerDrawable;
-        }else {
-            return shapeDrawable;
-        }
-    }
-
-    @SuppressLint("NewApi")
-    private void setBackgroundCompat(Drawable drawable) {
-        if (hasLollipopApi()){
-            float elevation;
-            if (mShadow){
-                elevation = getElevation() > 0.0f ? getElevation() : dip2px(mContext,8);
-            }else{
-                elevation = 0.0f;
-            }
-            setElevation(elevation);
-            RippleDrawable rippleDrawable = new RippleDrawable(new ColorStateList(new int[][]{{}},new int[]{mColorRipple})
-            , drawable, null);
-            setOutlineProvider(new ViewOutlineProvider() {
-                @Override
-                public void getOutline(View view, Outline outline) {
-                    int size = dip2px(mContext,40);
-                    outline.setOval(0, 0, size, size);
-                }
-            });
-            setClipToOutline(true);
-            setBackground(rippleDrawable);
-        }else if (hasJellyBeanApi()){
-            setBackground(drawable);
-        }else {
-            setBackgroundDrawable(drawable);
-        }
-    }
 
     /**
      * 绑定recyclerview的滑动监听,上滑出现,下滑隐藏
@@ -311,70 +228,27 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
                                      ScrollDirectionListener scrollDirectionlistener,
                                      RecyclerView.OnScrollListener onScrollListener){
         RecyclerViewScrollDetectorImpl scrollDetector = new RecyclerViewScrollDetectorImpl();
-        scrollDetector.setScrollDirectionListener(scrollDirectionlistener);
+        scrollDetector.setScrollDirectionListener(scrollDirectionlistener,this);
         scrollDetector.setOnScrollListener(onScrollListener);
         scrollDetector.setScrollThreshold(mScrollThreshold);
         recyclerView.addOnScrollListener(scrollDetector);
     }
 
-    private class RecyclerViewScrollDetectorImpl extends RecyclerViewScrollDetector{
-        private ScrollDirectionListener mScrollDirectionListener;
-        private RecyclerView.OnScrollListener mOnScrollListener;
-
-        private void setScrollDirectionListener(ScrollDirectionListener scrollDirectionListener){
-            mScrollDirectionListener = scrollDirectionListener;
-        }
-
-        public void setOnScrollListener(RecyclerView.OnScrollListener onScrollListener){
-            mOnScrollListener = onScrollListener;
-        }
-
-        @Override
-        void onScrollUp() {
-            hide();
-            if (mScrollDirectionListener != null) {
-                mScrollDirectionListener.onScrollUp();
-            }
-        }
-
-        @Override
-        void onScrollDown() {
-            show();
-            if (mScrollDirectionListener != null) {
-                mScrollDirectionListener.onScrollDown();
-            }
-        }
-
-        @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-            if (mOnScrollListener != null) {
-                mOnScrollListener.onScrolled(recyclerView, dx, dy);
-            }
-            super.onScrolled(recyclerView, dx, dy);
-        }
-
-        @Override
-        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-            if (mOnScrollListener != null){
-                mOnScrollListener.onScrollStateChanged(recyclerView,newState);
-            }
-            super.onScrollStateChanged(recyclerView, newState);
-        }
-    }
-
+    @Override
     public void show() {
-        show(true);
+        showAnimation(true);
     }
 
+    @Override
     public void hide() {
-        hide(true);
+        hideAnimation(true);
     }
 
-    public void show(boolean animate) {
+    public void showAnimation(boolean animate) {
         toggle(true, animate, false);
     }
 
-    public void hide(boolean animate) {
+    public void hideAnimation(boolean animate) {
         toggle(false, animate, false);
     }
 
@@ -414,6 +288,16 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
             }
         }
     }
+
+    /**
+     * 设置关闭背景颜色
+     */
+    public void setCloseColor(int color){
+        Drawable background = mLayerDrawable.getDrawable(0);
+        background.setColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        invalidate();
+    }
+
     private int getMarginBottom() {
         int marginBottom = 0;
         final ViewGroup.LayoutParams layoutParams = getLayoutParams();
@@ -431,6 +315,27 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         return (int) (dpValue * scale + 0.5f);
     }
 
+    public static Bitmap drawableToBitmap (Drawable drawable) {
+        Bitmap bitmap = null;
+
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if(bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        }
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
 }
 
 
