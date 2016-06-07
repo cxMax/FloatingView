@@ -12,6 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Build;
 import android.support.annotation.DimenRes;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -23,8 +24,10 @@ import android.view.animation.Interpolator;
 import android.widget.ImageView;
 
 import com.cxmax.library.R;
+import com.cxmax.library.listener.ScrollDirectionListener;
 import com.cxmax.library.listener.recyclerview.RecyclerViewScrollDetectorImpl;
-import com.cxmax.library.listener.recyclerview.ScrollDirectionListener;
+import com.cxmax.library.listener.scrollview.ObservableScrollView;
+import com.cxmax.library.listener.scrollview.ScrollViewScrollDetectorImpl;
 import com.nineoldandroids.view.ViewHelper;
 
 /**
@@ -232,6 +235,25 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         scrollDetector.setOnScrollListener(onScrollListener);
         scrollDetector.setScrollThreshold(mScrollThreshold);
         recyclerView.addOnScrollListener(scrollDetector);
+    }
+
+    public void attachToScrollView(@NonNull ObservableScrollView scrollView) {
+        attachToScrollView(scrollView, null, null);
+    }
+
+    public void attachToScrollView(@NonNull ObservableScrollView scrollView,
+                                   ScrollDirectionListener scrollDirectionListener) {
+        attachToScrollView(scrollView, scrollDirectionListener, null);
+    }
+
+    public void attachToScrollView(@NonNull ObservableScrollView scrollView,
+                                   ScrollDirectionListener scrollDirectionListener,
+                                   ObservableScrollView.OnScrollChangedListener onScrollChangedListener) {
+        ScrollViewScrollDetectorImpl scrollDetector = new ScrollViewScrollDetectorImpl();
+        scrollDetector.setScrollDirectionListener(scrollDirectionListener, this);
+        scrollDetector.setOnScrollChangedListener(onScrollChangedListener);
+        scrollDetector.setScrollThreshold(mScrollThreshold);
+        scrollView.setOnScrollChangedListener(scrollDetector);
     }
 
     @Override

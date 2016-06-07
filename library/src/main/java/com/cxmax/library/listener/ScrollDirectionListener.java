@@ -1,4 +1,4 @@
-package com.cxmax.library.listener.recyclerview;
+package com.cxmax.library.listener;
 
 /**
  * 用户行为下滑,上滑

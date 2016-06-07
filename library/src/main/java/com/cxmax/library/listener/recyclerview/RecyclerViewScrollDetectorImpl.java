@@ -2,13 +2,15 @@ package com.cxmax.library.listener.recyclerview;
 
 import android.support.v7.widget.RecyclerView;
 
+import com.cxmax.library.listener.ScrollDirectionListener;
+
 /**
  * 这个是具体Recyclerview滑动监听的逻辑实现,只需要在对应View中绑定即可
  * Created by cxMax on 2016/6/7.
  */
 public class RecyclerViewScrollDetectorImpl extends RecyclerViewScrollDetector {
 
-    private ScrollDirectionListener mScrollDirectionListener;
+
     private RecyclerView.OnScrollListener mOnScrollListener;
     private ScrollDirectionListener.ScrollViewListener mListener;
 
@@ -24,17 +26,11 @@ public class RecyclerViewScrollDetectorImpl extends RecyclerViewScrollDetector {
     @Override
     public void onScrollUp() {
         mListener.hide();
-        if (mScrollDirectionListener != null) {
-            mScrollDirectionListener.onScrollUp();
-        }
     }
 
     @Override
     public void onScrollDown() {
         mListener.show();
-        if (mScrollDirectionListener != null) {
-            mScrollDirectionListener.onScrollDown();
-        }
     }
 
     @Override
