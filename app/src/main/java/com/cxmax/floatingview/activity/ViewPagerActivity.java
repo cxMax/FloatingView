@@ -1,6 +1,7 @@
 package com.cxmax.floatingview.activity;
 
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -15,25 +16,23 @@ import com.cxmax.library.widget.FloatingView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements FloatingView.OnFloatClickListener{
-//    private RecyclerView mRecyclerView;
-//    private List<String> mDatas;
-//    private FloatingView mFloatingView;
+/**
+ * Created by caixi on 2016/6/11.
+ */
+public class ViewPagerActivity extends AppCompatActivity implements FloatingView.OnFloatClickListener{
     private List<View> mViews;
     private ViewPager mViewPager;
     private FloatingView mFloatingView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreate(Bundle savedInstanceState, PersistableBundle persistentState) {
+        super.onCreate(savedInstanceState, persistentState);
         setContentView(R.layout.activity_viewpager);
-        initFloatView();
         initData();
         initView();
-//        initData();
-//        initRecyclerView();
-//        initView();
+        initFloatView();
     }
+
     private void initFloatView() {
         mFloatingView = (FloatingView) findViewById(R.id.float_view);
         mFloatingView.setOnFloatClickListener(this);
@@ -42,7 +41,6 @@ public class MainActivity extends AppCompatActivity implements FloatingView.OnFl
     private void initView() {
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
         mViewPager.setAdapter(new ViewPagerAdapter(mViews));
-        mFloatingView.attachToViewPager(mViewPager);
     }
 
     private void initData() {
@@ -59,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements FloatingView.OnFl
     }
 
 
-    class ViewPagerAdapter extends PagerAdapter {
+    class ViewPagerAdapter extends PagerAdapter{
         private List<View> mViews = new ArrayList<>();
 
         public ViewPagerAdapter(List<View> views) {
@@ -87,33 +85,4 @@ public class MainActivity extends AppCompatActivity implements FloatingView.OnFl
             return view == object;
         }
     }
-//    private void initRecyclerView() {
-//        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
-//        mRecyclerView.setHasFixedSize(true);
-//        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-//        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-//        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
-//        mRecyclerView.setAdapter(new RecyclerAdapter(mDatas,this));
-//    }
-//
-//    /**
-//     * 初始化数据
-//     */
-//    private void initData() {
-//        mDatas = new ArrayList<>();
-//        for (int i = 'A'; i < 'z'; i++)
-//        {
-//            mDatas.add("这是" + (char) i + "项");
-//        }
-//    }
-//    private void initView() {
-//        mFloatingView = (FloatingView) findViewById(R.id.float_view);
-//        mFloatingView.setOnFloatClickListener(this);
-//        mFloatingView.attachToRecyclerView(mRecyclerView);
-//    }
-//
-//    @Override
-//    public void floatClick(View view) {
-//        Toast.makeText(this,"hhhhhhh",Toast.LENGTH_SHORT).show();
-//    }
 }

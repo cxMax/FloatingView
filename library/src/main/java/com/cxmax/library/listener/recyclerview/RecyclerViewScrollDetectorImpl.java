@@ -29,6 +29,16 @@ public class RecyclerViewScrollDetectorImpl extends RecyclerViewScrollDetector {
     }
 
     @Override
+    public void onScrollLeft() {
+
+    }
+
+    @Override
+    public void onScrollRight() {
+
+    }
+
+    @Override
     public void onScrollDown() {
         mListener.show();
     }

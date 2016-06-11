@@ -13,6 +13,7 @@ import android.graphics.drawable.LayerDrawable;
 import android.os.Build;
 import android.support.annotation.DimenRes;
 import android.support.annotation.NonNull;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -28,6 +29,7 @@ import com.cxmax.library.listener.ScrollDirectionListener;
 import com.cxmax.library.listener.recyclerview.RecyclerViewScrollDetectorImpl;
 import com.cxmax.library.listener.scrollview.ObservableScrollView;
 import com.cxmax.library.listener.scrollview.ScrollViewScrollDetectorImpl;
+import com.cxmax.library.listener.viewpager.ViewPagerScrollDetectorImpl;
 import com.nineoldandroids.view.ViewHelper;
 
 /**
@@ -222,7 +224,6 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
 
     /**
      * 绑定recyclerview的滑动监听,上滑出现,下滑隐藏
-     * @param recyclerView
      */
     public void attachToRecyclerView(RecyclerView recyclerView){
         attachToRecyclerView(recyclerView, null, null);
@@ -244,6 +245,27 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         }
     }
 
+    public void attachToViewPager(ViewPager viewPager){
+        attachToViewPager(viewPager, null, null);
+    }
+
+    public void attachToViewPager(ViewPager viewPager , ScrollDirectionListener scrollDirectionListener){
+        attachToViewPager(viewPager, scrollDirectionListener, null);
+    }
+
+    public void attachToViewPager(ViewPager viewPager , ScrollDirectionListener scrollDirectionListener, ViewPager.OnPageChangeListener onPageChangeListener){
+        if (mNeedAnimation){
+            ViewPagerScrollDetectorImpl viewPagerScrollDetector = new ViewPagerScrollDetectorImpl();
+            viewPagerScrollDetector.setScrollDirectionListener(scrollDirectionListener,this);
+            viewPagerScrollDetector.setmPageChangeListener(onPageChangeListener);
+            viewPagerScrollDetector.setScrollThreshold(mScrollThreshold);
+            viewPager.addOnPageChangeListener(viewPagerScrollDetector);
+        }
+    }
+
+    /**
+     * 绑定ScrollView的滑动监听,上滑出现,下滑隐藏
+     */
     public void attachToScrollView(@NonNull ObservableScrollView scrollView) {
         attachToScrollView(scrollView, null, null);
     }
