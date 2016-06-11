@@ -37,6 +37,8 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     private final static String TAQ = FloatingView.class.getSimpleName();
     private final static int MAX_WIDTH = 90;
     private final static int MAX_HEIGHT = 90;
+    private final static int DELETE_DEFAULT_WIDTH = 20;//删除图标的默认宽高
+
     private static final int TRANSLATE_DURATION_MILLIS = 200;//进入和移出的动画时间
 
     private boolean mVisible;//当前view是否在屏幕内可见
@@ -101,7 +103,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mMatrix.setTranslate(mWidth - mBitmapHeight, dip2px(mContext,4));
+        mMatrix.setTranslate(mWidth - mBitmapWidth, dip2px(mContext,4));
         canvas.drawBitmap(mBitmap, mMatrix, mPaint);
     }
 
@@ -155,11 +157,14 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         mContext = context;
         mScrollThreshold = dip2px(mContext,4);
         mPaint = new Paint();
+        //这里按照默认的尺寸初始化删除图标大小
+        mBitmapWidth = dip2px(mContext,DELETE_DEFAULT_WIDTH);
+        mBitmapHeight = dip2px(mContext,DELETE_DEFAULT_WIDTH);
         if (mBitmap == null){
             mBitmap = createLayerDrawable();
         }
-        mBitmapWidth = mBitmap.getWidth();
-        mBitmapHeight = mBitmap.getHeight();
+//        mBitmapWidth = mBitmap.getWidth();
+//        mBitmapHeight = mBitmap.getHeight();
         mMatrix = new Matrix();
         //初始化自定义属性
         if (attributeSet != null) {
@@ -230,11 +235,13 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     public void attachToRecyclerView(RecyclerView recyclerView,
                                      ScrollDirectionListener scrollDirectionlistener,
                                      RecyclerView.OnScrollListener onScrollListener){
-        RecyclerViewScrollDetectorImpl scrollDetector = new RecyclerViewScrollDetectorImpl();
-        scrollDetector.setScrollDirectionListener(scrollDirectionlistener,this);
-        scrollDetector.setOnScrollListener(onScrollListener);
-        scrollDetector.setScrollThreshold(mScrollThreshold);
-        recyclerView.addOnScrollListener(scrollDetector);
+        if (mNeedAnimation){
+            RecyclerViewScrollDetectorImpl scrollDetector = new RecyclerViewScrollDetectorImpl();
+            scrollDetector.setScrollDirectionListener(scrollDirectionlistener,this);
+            scrollDetector.setOnScrollListener(onScrollListener);
+            scrollDetector.setScrollThreshold(mScrollThreshold);
+            recyclerView.addOnScrollListener(scrollDetector);
+        }
     }
 
     public void attachToScrollView(@NonNull ObservableScrollView scrollView) {
@@ -337,7 +344,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         return (int) (dpValue * scale + 0.5f);
     }
 
-    public static Bitmap drawableToBitmap (Drawable drawable) {
+    public Bitmap drawableToBitmap (Drawable drawable) {
         Bitmap bitmap = null;
 
         if (drawable instanceof BitmapDrawable) {
@@ -354,7 +361,8 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         }
 
         Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+//        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.setBounds(0, 0, mBitmapWidth, mBitmapHeight);
         drawable.draw(canvas);
         return bitmap;
     }
