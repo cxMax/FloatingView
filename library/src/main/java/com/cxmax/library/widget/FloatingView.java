@@ -22,7 +22,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.widget.ImageView;
 
 import com.cxmax.library.R;
 import com.cxmax.library.listener.ScrollDirectionListener;
@@ -33,9 +32,10 @@ import com.cxmax.library.listener.viewpager.ViewPagerScrollDetectorImpl;
 import com.nineoldandroids.view.ViewHelper;
 
 /**
+ * claim : 为了加载GIF图继承的GifView,如果用Gilde加载GIF图就直接继承ImageView即可
  * Created by cxmax on 2016/5/31.
  */
-public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobalLayoutListener,ScrollDirectionListener.ScrollViewListener {
+public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLayoutListener,ScrollDirectionListener.ScrollViewListener {
     private final static String TAQ = FloatingView.class.getSimpleName();
     private final static int MAX_WIDTH = 90;
     private final static int MAX_HEIGHT = 90;
@@ -56,6 +56,9 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     private Matrix mMatrix;
     private OnFloatClickListener mOnFloatClickListener;
     private LayerDrawable mLayerDrawable;
+
+    private boolean isSetColor; //设置背景颜色需要invalidate();
+    private int mDeleteColor; //图标背景颜色
 
     public interface OnFloatClickListener{
         void floatClick(View view);
@@ -105,6 +108,9 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (isSetColor && mDeleteColor != 0){
+            mBitmap = createLayerDrawable(mDeleteColor);
+        }
         mMatrix.setTranslate(mWidth - mBitmapWidth, dip2px(mContext,4));
         canvas.drawBitmap(mBitmap, mMatrix, mPaint);
     }
@@ -196,6 +202,19 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         return drawableToBitmap(mLayerDrawable);
     }
 
+    @SuppressWarnings("ResourceType")
+    private Bitmap createLayerDrawable(int color) {
+        if (mLayerDrawable == null ){
+            Drawable[] layers = new Drawable[2];
+            layers[0] = getDrawable(R.drawable.float_ad_close_background);
+            layers[1] = getDrawable(R.drawable.float_ad_close);
+            mLayerDrawable = new LayerDrawable(layers);
+        }
+        Drawable background = mLayerDrawable.getDrawable(0);
+        background.setColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        return drawableToBitmap(mLayerDrawable);
+    }
+
     private boolean hasHoneycombApi() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
     }
@@ -258,7 +277,6 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
             ViewPagerScrollDetectorImpl viewPagerScrollDetector = new ViewPagerScrollDetectorImpl();
             viewPagerScrollDetector.setScrollDirectionListener(scrollDirectionListener,this);
             viewPagerScrollDetector.setmPageChangeListener(onPageChangeListener);
-            viewPagerScrollDetector.setScrollThreshold(mScrollThreshold);
             viewPager.addOnPageChangeListener(viewPagerScrollDetector);
         }
     }
@@ -344,8 +362,8 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
      * 设置关闭背景颜色
      */
     public void setCloseColor(int color){
-        Drawable background = mLayerDrawable.getDrawable(0);
-        background.setColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        isSetColor = true;
+        this.mDeleteColor = color;
         invalidate();
     }
 
@@ -388,6 +406,8 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         drawable.draw(canvas);
         return bitmap;
     }
+
+
 }
 
 

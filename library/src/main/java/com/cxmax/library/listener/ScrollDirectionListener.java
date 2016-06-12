@@ -20,6 +20,5 @@ public interface ScrollDirectionListener {
     public interface ScrollViewListener{
         void hide();
         void show();
-        // TODO: 2016/6/12 左右滑动监听
     }
 }
