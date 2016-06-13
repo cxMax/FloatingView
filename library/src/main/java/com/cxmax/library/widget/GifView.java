@@ -13,6 +13,9 @@ import android.widget.ImageView;
 
 import com.cxmax.library.R;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
@@ -73,6 +76,21 @@ public class GifView extends ImageView{
         mMovie = Movie.decodeStream(getResources().openRawResource(mMovieResourceId));
         requestLayout();
     }
+
+    //从缓存文件读取gif
+    public void setMovieResource(String path){
+        File file = new File(path);
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        mMovie = Movie.decodeStream(fileInputStream);
+        requestLayout();
+    }
+
+
 
     public void setMovieResource(InputStream is){
         mMovie = Movie.decodeStream(is);
