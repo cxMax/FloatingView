@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:src="@mipmap/float_ad_default"
-            max:cx_animation="true" />
+            max:cx_animation="false" />
     </com.cxmax.library.widget.DragLayout>
 
 </FrameLayout>
