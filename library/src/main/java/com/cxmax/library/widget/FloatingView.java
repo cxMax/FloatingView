@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
+import android.widget.ImageView;
 
 import com.cxmax.library.R;
 import com.cxmax.library.listener.ScrollDirectionListener;
@@ -32,10 +33,12 @@ import com.cxmax.library.listener.viewpager.ViewPagerScrollDetectorImpl;
 import com.nineoldandroids.view.ViewHelper;
 
 /**
- * claim : 为了加载GIF图继承的GifView,如果用Gilde加载GIF图就直接继承ImageView即可
- * Created by cxmax on 2016/5/31.
+ * 1.绑定滑动监听，View在滑动过程中显示隐藏的动画效果。
+ * 2.自定义View的绘制，主要用了Bitmap的绘制，在目标广告图的右上角用遮罩绘制删除按钮
+ * 3.View的点击事件OnTouchEvent的处理
+ * Created by CaiXi on 2016/8/23
  */
-public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLayoutListener,ScrollDirectionListener.ScrollViewListener {
+public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobalLayoutListener, ScrollDirectionListener.ScrollViewListener {
     private final static String TAQ = FloatingView.class.getSimpleName();
     private final static int MAX_WIDTH = 90;
     private final static int MAX_HEIGHT = 90;
@@ -50,20 +53,21 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
 
     private Context mContext;
     private boolean mMarginSet;
-    private int mWidth,mHeight,mBitmapWidth,mBitmapHeight;
+    private int mWidth, mHeight, mBitmapWidth, mBitmapHeight;
     private Paint mPaint;
     private Bitmap mBitmap;
+    private LayerDrawable mLayerDrawable;
     private Matrix mMatrix;
     private OnFloatClickListener mOnFloatClickListener;
-    private LayerDrawable mLayerDrawable;
 
-    private boolean isSetColor; //设置背景颜色需要invalidate();
-    private int mDeleteColor; //图标背景颜色
+    private boolean isSetColor;
+    private int mDeleteColor;
 
-    public interface OnFloatClickListener{
+    public interface OnFloatClickListener {
         void floatClick(View view);
-    }
 
+        void floatCloseClick();
+    }
     public FloatingView(Context context) {
         this(context, null);
     }
@@ -81,22 +85,20 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        //设置宽度
         int specMode = MeasureSpec.getMode(widthMeasureSpec);
         int specSize = MeasureSpec.getSize(widthMeasureSpec);
-        if (specMode == MeasureSpec.EXACTLY){
+        if (specMode == MeasureSpec.EXACTLY) {
             mWidth = specSize;
-        }else if (specMode == MeasureSpec.AT_MOST){
-            mWidth = Math.min(dip2px(mContext, MAX_WIDTH),specSize);
+        } else if (specMode == MeasureSpec.AT_MOST) {
+            mWidth = Math.min(dip2px(mContext, MAX_WIDTH), specSize);
         }
 
-        //设置高度
         specMode = MeasureSpec.getMode(heightMeasureSpec);
         specSize = MeasureSpec.getSize(heightMeasureSpec);
-        if (specMode == MeasureSpec.EXACTLY){
+        if (specMode == MeasureSpec.EXACTLY) {
             mHeight = specSize;
-        }else if (specMode == MeasureSpec.AT_MOST){
-            mHeight = Math.min(dip2px(mContext,MAX_HEIGHT), specSize);
+        } else if (specMode == MeasureSpec.AT_MOST) {
+            mHeight = Math.min(dip2px(mContext, MAX_HEIGHT), specSize);
         }
 
         setMargins();
@@ -108,42 +110,32 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (isSetColor && mDeleteColor != 0){
+        if (isSetColor && mDeleteColor != 0) {
             mBitmap = createLayerDrawable(mDeleteColor);
         }
-        mMatrix.setTranslate(mWidth - mBitmapWidth, dip2px(mContext,4));
+        mMatrix.setTranslate(mWidth - mBitmapHeight, dip2px(mContext, 4));
         canvas.drawBitmap(mBitmap, mMatrix, mPaint);
     }
 
-    /**
-     * View状态发生改变会回调这个监听,也就是在view消失的时候,回收bitmap
-     */
     @Override
-    public void onGlobalLayout() {
-        if (getVisibility() == GONE){
-            if (!mBitmap.isRecycled()){
-                mBitmap.recycle();
-            }
-        }
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+
     }
 
-    /**
-     * 点击事件绑定
-     * @param event
-     * @return
-     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
 
                 break;
             case MotionEvent.ACTION_DOWN:
-                if (mBitmap != null){
+                if (mBitmap != null) {
                     boolean touchable = (event.getX() > (mWidth - mBitmapWidth) && event.getY() < mBitmapHeight);
-                    if (touchable){
+                    if (touchable) {
                         setVisibility(GONE);
-                    }else {
+                        mOnFloatClickListener.floatCloseClick();
+                    } else {
                         mOnFloatClickListener.floatClick(this);
                     }
                 }
@@ -154,25 +146,16 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         return true;
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-    }
-
     @SuppressWarnings("ResourceType")
     private void init(Context context, AttributeSet attributeSet) {
         mVisible = true;
         mContext = context;
-        mScrollThreshold = dip2px(mContext,4);
         mPaint = new Paint();
-        //这里按照默认的尺寸初始化删除图标大小
-        mBitmapWidth = dip2px(mContext,DELETE_DEFAULT_WIDTH);
-        mBitmapHeight = dip2px(mContext,DELETE_DEFAULT_WIDTH);
-        if (mBitmap == null){
+        mBitmapWidth = dip2px(mContext, (float) DELETE_DEFAULT_WIDTH);
+        mBitmapHeight = dip2px(mContext, (float) DELETE_DEFAULT_WIDTH);
+        if (mBitmap == null) {
             mBitmap = createLayerDrawable();
         }
-//        mBitmapWidth = mBitmap.getWidth();
-//        mBitmapHeight = mBitmap.getHeight();
         mMatrix = new Matrix();
         //初始化自定义属性
         if (attributeSet != null) {
@@ -190,10 +173,8 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
     private TypedArray getTypedArray(Context context, AttributeSet attributeSet, int[] attr) {
         return context.obtainStyledAttributes(attributeSet, attr, 0, 0);
     }
-
-    @SuppressWarnings("ResourceType")
     private Bitmap createLayerDrawable() {
-        if (mLayerDrawable == null ){
+        if (mLayerDrawable == null) {
             Drawable[] layers = new Drawable[2];
             layers[0] = getDrawable(R.drawable.float_ad_close_background);
             layers[1] = getDrawable(R.drawable.float_ad_close);
@@ -202,31 +183,21 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         return drawableToBitmap(mLayerDrawable);
     }
 
-    @SuppressWarnings("ResourceType")
     private Bitmap createLayerDrawable(int color) {
-        if (mLayerDrawable == null ){
+        if (mLayerDrawable == null) {
             Drawable[] layers = new Drawable[2];
             layers[0] = getDrawable(R.drawable.float_ad_close_background);
             layers[1] = getDrawable(R.drawable.float_ad_close);
             mLayerDrawable = new LayerDrawable(layers);
         }
         Drawable background = mLayerDrawable.getDrawable(0);
-        background.setColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        background.setColorFilter(color, PorterDuff.Mode.SRC_IN);
         return drawableToBitmap(mLayerDrawable);
     }
 
-    private boolean hasHoneycombApi() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
-    }
-
-    @SuppressWarnings("ResourceType")
-    private Drawable getDrawable(@DimenRes int id){
-        return getResources().getDrawable(id);
-    }
-
-    private void setMargins(){
-        if (!mMarginSet){
-            if (getLayoutParams() instanceof ViewGroup.LayoutParams){
+    private void setMargins() {
+        if (!mMarginSet) {
+            if (getLayoutParams() instanceof ViewGroup.LayoutParams) {
                 ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) getLayoutParams();
                 int leftMargin = lp.leftMargin;
                 int topMargin = lp.topMargin;
@@ -240,42 +211,45 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         }
     }
 
+    private boolean hasHoneycombApi() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+    }
 
     /**
      * 绑定recyclerview的滑动监听,上滑出现,下滑隐藏
      */
-    public void attachToRecyclerView(RecyclerView recyclerView){
+    public void attachToRecyclerView(RecyclerView recyclerView) {
         attachToRecyclerView(recyclerView, null, null);
     }
 
-    public void attachToRecyclerView(RecyclerView recyclerView, ScrollDirectionListener scrollDirectionListener){
+    public void attachToRecyclerView(RecyclerView recyclerView, ScrollDirectionListener scrollDirectionListener) {
         attachToRecyclerView(recyclerView, scrollDirectionListener, null);
     }
 
     public void attachToRecyclerView(RecyclerView recyclerView,
                                      ScrollDirectionListener scrollDirectionlistener,
-                                     RecyclerView.OnScrollListener onScrollListener){
-        if (mNeedAnimation){
+                                     RecyclerView.OnScrollListener onScrollListener) {
+        if (mNeedAnimation) {
             RecyclerViewScrollDetectorImpl scrollDetector = new RecyclerViewScrollDetectorImpl();
-            scrollDetector.setScrollDirectionListener(scrollDirectionlistener,this);
+            scrollDetector.setScrollDirectionListener(scrollDirectionlistener, this);
             scrollDetector.setOnScrollListener(onScrollListener);
             scrollDetector.setScrollThreshold(mScrollThreshold);
             recyclerView.addOnScrollListener(scrollDetector);
         }
     }
 
-    public void attachToViewPager(ViewPager viewPager){
+    public void attachToViewPager(ViewPager viewPager) {
         attachToViewPager(viewPager, null, null);
     }
 
-    public void attachToViewPager(ViewPager viewPager , ScrollDirectionListener scrollDirectionListener){
+    public void attachToViewPager(ViewPager viewPager, ScrollDirectionListener scrollDirectionListener) {
         attachToViewPager(viewPager, scrollDirectionListener, null);
     }
 
-    public void attachToViewPager(ViewPager viewPager , ScrollDirectionListener scrollDirectionListener, ViewPager.OnPageChangeListener onPageChangeListener){
-        if (mNeedAnimation){
+    public void attachToViewPager(ViewPager viewPager, ScrollDirectionListener scrollDirectionListener, ViewPager.OnPageChangeListener onPageChangeListener) {
+        if (mNeedAnimation) {
             ViewPagerScrollDetectorImpl viewPagerScrollDetector = new ViewPagerScrollDetectorImpl();
-            viewPagerScrollDetector.setScrollDirectionListener(scrollDirectionListener,this);
+            viewPagerScrollDetector.setScrollDirectionListener(scrollDirectionListener, this);
             viewPagerScrollDetector.setmPageChangeListener(onPageChangeListener);
             viewPager.addOnPageChangeListener(viewPagerScrollDetector);
         }
@@ -325,14 +299,14 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         if (mVisible != visible || force) {
             mVisible = visible;
             int height = getHeight();
-            if (height == 0 && !force){
+            if (height == 0 && !force) {
                 ViewTreeObserver vto = getViewTreeObserver();
-                if (vto.isAlive()){
+                if (vto.isAlive()) {
                     vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                         @Override
                         public boolean onPreDraw() {
                             ViewTreeObserver currentVto = getViewTreeObserver();
-                            if (currentVto.isAlive()){
+                            if (currentVto.isAlive()) {
                                 currentVto.removeOnPreDrawListener(this);
                             }
                             toggle(visible, animate, true);
@@ -347,24 +321,15 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
                 com.nineoldandroids.view.ViewPropertyAnimator.animate(this).setInterpolator(mInterpolator)
                         .setDuration(TRANSLATE_DURATION_MILLIS)
                         .translationY(translationY);
-            }else{
-                ViewHelper.setTranslationY(this,translationY);
+            } else {
+                ViewHelper.setTranslationY(this, translationY);
             }
 
             //正在移动的view仍然可以被点击,因此我们需要将它的点击事件手动的disable
-            if (!hasHoneycombApi()){
+            if (!hasHoneycombApi()) {
                 setClickable(visible);
             }
         }
-    }
-
-    /**
-     * 设置关闭背景颜色
-     */
-    public void setCloseColor(int color){
-        isSetColor = true;
-        this.mDeleteColor = color;
-        invalidate();
     }
 
     private int getMarginBottom() {
@@ -375,8 +340,14 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         }
         return marginBottom;
     }
-    public void setOnFloatClickListener(OnFloatClickListener listener){
+
+    public void setOnFloatClickListener(OnFloatClickListener listener) {
         mOnFloatClickListener = listener;
+    }
+
+    @SuppressWarnings("ResourceType")
+    private Drawable getDrawable(@DimenRes int id) {
+        return getResources().getDrawable(id);
     }
 
     private int dip2px(Context context, float dpValue) {
@@ -384,32 +355,54 @@ public class FloatingView extends GifView implements ViewTreeObserver.OnGlobalLa
         return (int) (dpValue * scale + 0.5f);
     }
 
-    public Bitmap drawableToBitmap (Drawable drawable) {
+
+    public Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
 
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-            if(bitmapDrawable.getBitmap() != null) {
+            if (bitmapDrawable.getBitmap() != null) {
                 return bitmapDrawable.getBitmap();
             }
         }
 
-        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+        if (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         } else {
             bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
         }
 
         Canvas canvas = new Canvas(bitmap);
-//        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.setBounds(0, 0, mBitmapWidth, mBitmapHeight);
         drawable.draw(canvas);
         return bitmap;
     }
 
 
+    @Override
+    public void onGlobalLayout() {
+        if (getVisibility() == GONE) {
+            if (!mBitmap.isRecycled()) {
+                mBitmap.recycle();
+                mBitmap = null;
+            }
+
+        }
+    }
+
+
+    /**
+     * 设置关闭背景颜色
+     */
+    public void setCloseColor(int color) {
+        isSetColor = true;
+        this.mDeleteColor = color;
+        invalidate();
+    }
+
+    @Override
+    public void setImageBitmap(Bitmap bm) {
+        super.setImageBitmap(bm);
+        invalidate();
+    }
 }
-
-
-
-

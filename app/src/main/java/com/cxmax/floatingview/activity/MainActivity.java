@@ -55,7 +55,12 @@ public class MainActivity extends AppCompatActivity implements FloatingView.OnFl
 
     @Override
     public void floatClick(View view) {
-        Toast.makeText(this,"hhhhhhh",Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,"点击悬浮广告",Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void floatCloseClick() {
+        Toast.makeText(this,"关闭悬浮广告",Toast.LENGTH_SHORT).show();
     }
 
 

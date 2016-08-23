@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by caixi on 2016/6/11.
+ * Created by CaiXi on 2016/6/11.
  */
 public class ViewPagerActivity extends AppCompatActivity implements FloatingView.OnFloatClickListener{
     private List<View> mViews;
@@ -53,7 +53,12 @@ public class ViewPagerActivity extends AppCompatActivity implements FloatingView
 
     @Override
     public void floatClick(View view) {
-        Toast.makeText(this,"hhhhhhh",Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,"点击悬浮广告",Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void floatCloseClick() {
+        Toast.makeText(this,"关闭悬浮广告",Toast.LENGTH_SHORT).show();
     }
 
 
