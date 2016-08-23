@@ -11,12 +11,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.cxmax.library.widget.FloatingView
-        android:id="@+id/float_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
-        android:layout_margin="16dp"
-        android:src="@mipmap/float_ad_default"
-        max:cx_animation="true" />
+    <com.cxmax.library.widget.DragLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom|right">
+
+        <com.cxmax.library.widget.FloatingView
+            android:id="@+id/float_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:src="@mipmap/float_ad_default"
+            max:cx_animation="true" />
+    </com.cxmax.library.widget.DragLayout>
+
 </FrameLayout>
