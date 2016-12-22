@@ -34,5 +34,6 @@ GifDecoder.with(getActivity()).load(current_appAdStructItem.img_url, new GifDeco
             
   ```            
   ##3.效果图：
+  
   ![image](https://raw.githubusercontent.com/cxMax/FloatingView/master/app/asset/profile.png)
   
