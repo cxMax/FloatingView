@@ -39,8 +39,8 @@ GifDecoder.with(getActivity()).load(current_appAdStructItem.img_url, new GifDeco
   ![image](https://raw.githubusercontent.com/cxMax/FloatingView/master/app/asset/profile.png)
   
 ### License
- Copyright (C) 2016 Amit Shekhar
-   Copyright (C) 2011 Android Open Source Project
+   Copyright (C) 2016 cxMax  
+   Copyright (C) 2016 FloatingView
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
