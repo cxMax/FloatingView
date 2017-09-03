@@ -12,6 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Build;
 import android.support.annotation.DimenRes;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
@@ -60,9 +62,6 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     private Matrix mMatrix;
     private OnFloatClickListener mOnFloatClickListener;
 
-    private boolean isSetColor;
-    private int mDeleteColor;
-
     public interface OnFloatClickListener {
         void floatClick(View view);
 
@@ -110,11 +109,10 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (isSetColor && mDeleteColor != 0) {
-            mBitmap = createLayerDrawable(mDeleteColor);
-        }
         mMatrix.setTranslate(mWidth - mBitmapHeight, dip2px(mContext, 4));
-        canvas.drawBitmap(mBitmap, mMatrix, mPaint);
+        if (mBitmap != null) {
+            canvas.drawBitmap(mBitmap, mMatrix, mPaint);
+        }
     }
 
     @Override
@@ -135,6 +133,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
                     if (touchable) {
                         setVisibility(GONE);
                         mOnFloatClickListener.floatCloseClick();
+                        releaseBitmap();
                     } else {
                         mOnFloatClickListener.floatClick(this);
                     }
@@ -144,6 +143,13 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
                 break;
         }
         return true;
+    }
+
+    private void releaseBitmap() {
+        if (!mBitmap.isRecycled()){
+            mBitmap.recycle();
+            mBitmap = null;
+        }
     }
 
     @SuppressWarnings("ResourceType")
@@ -167,6 +173,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         TypedArray attr = getTypedArray(context,attributeSet, R.styleable.FloatingView);
         if (attr != null){
             mNeedAnimation = attr.getBoolean(R.styleable.FloatingView_cx_animation,true);
+            attr.recycle();
         }
     }
 
@@ -345,9 +352,8 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
         mOnFloatClickListener = listener;
     }
 
-    @SuppressWarnings("ResourceType")
-    private Drawable getDrawable(@DimenRes int id) {
-        return getResources().getDrawable(id);
+    private Drawable getDrawable(@DrawableRes int id) {
+        return getResources().getDrawable(id, null);
     }
 
     private int dip2px(Context context, float dpValue) {
@@ -382,11 +388,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
     @Override
     public void onGlobalLayout() {
         if (getVisibility() == GONE) {
-            if (!mBitmap.isRecycled()) {
-                mBitmap.recycle();
-                mBitmap = null;
-            }
-
+            releaseBitmap();
         }
     }
 
@@ -395,8 +397,7 @@ public class FloatingView extends ImageView implements ViewTreeObserver.OnGlobal
      * 设置关闭背景颜色
      */
     public void setCloseColor(int color) {
-        isSetColor = true;
-        this.mDeleteColor = color;
+        mBitmap = createLayerDrawable(color);
         invalidate();
     }
 
