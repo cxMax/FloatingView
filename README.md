@@ -9,7 +9,7 @@ but，todo 拖拽后的悬浮广告移动距离得重新计算，隐藏方向也
 
 ### sample:
 ```java
-  <com.cxmax.library.widget.FloatingView
+  <com.cxmax.library.FloatingView
             android:id="@+id/float_view"<br/>
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="FloatingView">
-        <attr name="cx_animation" format="boolean" />
+        <attr name="draggable" format="boolean" />
     </declare-styleable>
 
 </resources>

@@ -1,3 +1,9 @@
 <resources>
     <dimen name="normal_size">40dp</dimen>
+    <dimen name="floating_view_max_width">78dp</dimen>
+    <dimen name="floating_view_max_height">78dp</dimen>
+    <dimen name="close_view_width">20dp</dimen>
+    <dimen name="close_view_height">20dp</dimen>
+    <dimen name="close_view_padding">3dp</dimen>
+
 </resources>
