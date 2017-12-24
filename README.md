@@ -19,7 +19,7 @@ Android 首页悬浮广告,可任意拖拽, 支持Gif图片的播放（不使用
         app:draggable="true" />
  ``` 
 ### 关于Gif图片的播放
-* 不使用Gilde： 
+* 不使用Gilde：  
 ps : gif图的播放在java层实现, 内存和性能表现并不好.
 ```java
 GifDecoder.with(getActivity()).load(current_appAdStructItem.img_url, new GifDecoder.OnLoadGifListener() {
