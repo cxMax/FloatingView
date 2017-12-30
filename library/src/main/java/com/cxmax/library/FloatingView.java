@@ -17,7 +17,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
-import com.cxmax.library.utils.DisplayUtils;
 import com.cxmax.library.utils.ImageUtils;
 
 import pl.droidsonroids.gif.GifDrawable;
@@ -38,7 +37,6 @@ public class FloatingView extends AppCompatImageView implements IFloatingView,Vi
     private boolean hasMargin;
     private Matrix matrix;
     private float pointX, pointY;
-    private boolean isCancel;
 
     /* close bitmap */
     private Bitmap closeBitmap;
@@ -113,10 +111,7 @@ public class FloatingView extends AppCompatImageView implements IFloatingView,Vi
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()){
             case MotionEvent.ACTION_UP:
-                if (!isCancel){
-                    checkOutOfBound(event.getRawX() , event.getRawY());
-                }
-                if (closeBitmap != null && !isCancel){
+                if (closeBitmap != null){
                     boolean touchable = (pointX > (width - closeWidth) && pointY < closeHeight);
                     if (touchable){
                         setVisibility(GONE);
@@ -149,10 +144,8 @@ public class FloatingView extends AppCompatImageView implements IFloatingView,Vi
                     pointX = event.getX();
                     pointY = event.getY();
                 }
-                isCancel = false;
                 break;
             case MotionEvent.ACTION_CANCEL:
-                isCancel = true;
                 break;
             case MotionEvent.ACTION_DOWN:
                 pointX = event.getX();
@@ -236,11 +229,6 @@ public class FloatingView extends AppCompatImageView implements IFloatingView,Vi
                 hasMargin = true;
             }
         }
-    }
-
-    private void checkOutOfBound(float rawX,float rawY) {
-        isCancel = rawX < DisplayUtils.getDisplayMetrics(context).widthPixels - width
-                || rawY < DisplayUtils.getDisplayMetrics(context).heightPixels - height;
     }
 
 }
